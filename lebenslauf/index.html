@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <title>Lebenslauf-Generator</title>
+</head>
+<body class="bg-blue-200">
+    <div id="generator" class="text-center py-8">
+        <h1 class="text-4xl font-bold text-purple-400">Lebenslauf-Generator</h1>
+        <p class="text-sm text-red-600 mt-2">Bitte alle Informationen ausfüllen</p>
+    </div>
+
+    <main id="mainContent" class="max-w-lg mx-auto bg-white shadow-lg p-8 rounded-lg">
+        <form id="lebenslaufForm">
+            <div class="mb-4">
+                <label for="name" class="block text-lg font-medium">Name:</label>
+                <input type="text" id="name" name="name" placeholder="Gib deinen Namen ein" required 
+                    class="w-full border rounded px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500">
+            </div>
+
+            <div class="mb-4">
+                <label for="phone" class="block text-lg font-medium">Telefonnummer:</label>
+                <input type="tel" id="phone" name="phone" placeholder="Gib deine Telefonnummer ein" required 
+                    class="w-full border rounded px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500">
+            </div>
+
+            <div class="mb-4">
+                <label for="email" class="block text-lg font-medium">E-Mail:</label>
+                <input type="email" id="email" name="email" placeholder="Gib deine E-Mail ein" required 
+                    class="w-full border rounded px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500">
+            </div>
+
+            <div class="mb-4">
+                <label for="shortDescription" class="block text-lg font-medium">Kurze Beschreibung:</label>
+                <textarea id="shortDescription" name="shortDescription" placeholder="Erzähle etwas über dich..." rows="1" required 
+                    class="w-full border rounded px-4 py-2 resize-none focus:outline-none focus:ring-2 focus:ring-blue-500 overflow-hidden"></textarea>
+            </div>
+
+            <div class="mb-4">
+                <label for="experience1" class="block text-lg font-medium">Berufserfahrung:</label>
+                <input type="text" id="experience1" name="experience[]" placeholder="Berufsbezeichnung" required 
+                    class="w-full border rounded px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500">
+            </div>
+
+            <div class="mb-4">
+                <label for="education1" class="block text-lg font-medium">Ausbildung:</label>
+                <input type="text" id="education1" name="education[]" placeholder="Ausbildungstitel" required 
+                    class="w-full border rounded px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500">
+            </div>
+
+            <div class="text-center">
+                <button type="submit" 
+                    class="bg-blue-500 text-white px-6 py-2 rounded hover:bg-blue-600">Erstellen</button>
+            </div>
+        </form>
+    </main>
+
+    <div id="resumeView" class="hidden max-w-lg mx-auto bg-white shadow-lg p-8 rounded-lg">
+        <h1 class="text-4xl font-bold text-purple-400 mb-4">Mein Lebenslauf</h1>
+        <p class="text-lg mb-2"><strong>Name:</strong> <span id="resumeName"></span></p>
+        <p class="text-lg mb-2"><strong>Telefonnummer:</strong> <span id="resumePhone"></span></p>
+        <p class="text-lg mb-2"><strong>E-Mail:</strong> <span id="resumeEmail"></span></p>
+        <p class="text-lg mb-2"><strong>Kurze Beschreibung:</strong> <span id="resumeShortDescription"></span></p>
+        <p class="text-lg mb-2"><strong>Berufserfahrung:</strong> <span id="resumeExperience"></span></p>
+        <p class="text-lg mb-2"><strong>Ausbildung:</strong> <span id="resumeEducation"></span></p>
+
+        <div class="text-center mt-6">
+            <button id="restartButton" 
+                class="bg-yellow-400 text-black px-4 py-2 rounded hover:bg-yellow-500">Neustarten</button>
+            <button id="editButton" 
+                class="bg-blue-500 text-white px-6 py-2 rounded hover:bg-blue-600">Zurück</button>
+        </div>
+    </div>
+
+    <script>
+        document.getElementById('lebenslaufForm').addEventListener('submit', function(event) {
+            event.preventDefault();
+
+            const name = document.getElementById('name').value.trim();
+            const phone = document.getElementById('phone').value.trim();
+            const email = document.getElementById('email').value.trim();
+            const shortDescription = document.getElementById('shortDescription').value.trim();
+            const experience = document.getElementById('experience1').value.trim();
+            const education = document.getElementById('education1').value.trim();
+
+            const phoneRegex = /^\+?[0-9]{10,15}$/;
+            const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+            if (!name || !phoneRegex.test(phone) || !emailRegex.test(email)) {
+                alert('Bitte alle Felder korrekt ausfüllen!');
+                return;
+            }
+
+            // Daten speichern
+            const resumeData = {
+                name,
+                phone,
+                email,
+                shortDescription,
+                experience,
+                education
+            };
+
+            // Lebenslauf anzeigen
+            document.getElementById('generator').classList.add('hidden');
+            document.getElementById('mainContent').classList.add('hidden');
+            document.getElementById('resumeView').classList.remove('hidden');
+
+            document.getElementById('resumeName').textContent = resumeData.name;
+            document.getElementById('resumePhone').textContent = resumeData.phone;
+            document.getElementById('resumeEmail').textContent = resumeData.email;
+            document.getElementById('resumeShortDescription').textContent = resumeData.shortDescription;
+            document.getElementById('resumeExperience').textContent = resumeData.experience;
+            document.getElementById('resumeEducation').textContent = resumeData.education;
+        });
+
+        document.getElementById('restartButton').addEventListener('click', function() {
+            location.reload();
+        });
+
+        document.getElementById('editButton').addEventListener('click', function() {
+            document.getElementById('resumeView').classList.add('hidden');
+            document.getElementById('generator').classList.remove('hidden');
+            document.getElementById('mainContent').classList.remove('hidden');
+        });
+    </script>
+</body>
+</html>

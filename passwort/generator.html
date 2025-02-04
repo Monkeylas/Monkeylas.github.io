@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Passwort Generator</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-100 h-screen flex items-center justify-center">
+  <div class="text-center">
+    <h1 class="text-4xl font-bold mb-8">Passwort Generator</h1>
+    <div class="bg-white p-6 rounded-lg shadow-lg w-96">
+      <label for="length" class="block text-left mb-2 font-medium">Länge des Passworts:</label>
+      <input type="range" id="length" min="4" max="20" value="12" class="w-full mb-4">
+      <p id="lengthValue" class="text-left mb-4">Länge: 12</p>
+      <div class="mb-4">
+        <label class="block text-left">
+          <input type="checkbox" id="includeNumbers" class="mr-2"> Zahlen
+        </label>
+        <label class="block text-left">
+          <input type="checkbox" id="includeLetters" class="mr-2" checked> Buchstaben
+        </label>
+        <label class="block text-left">
+          <input type="checkbox" id="includeSymbols" class="mr-2"> Sonderzeichen
+        </label>
+      </div>
+      <button id="generate" class="bg-blue-500 text-white px-4 py-2 rounded-lg hover:bg-blue-600">
+        Passwort Generieren
+      </button>
+      <p id="result" class="mt-4 text-lg font-bold"></p>
+    </div>
+  </div>
+
+  <script>
+    const lengthInput = document.getElementById('length');
+    const lengthValue = document.getElementById('lengthValue');
+    const includeNumbers = document.getElementById('includeNumbers');
+    const includeLetters = document.getElementById('includeLetters');
+    const includeSymbols = document.getElementById('includeSymbols');
+    const generateButton = document.getElementById('generate');
+    const result = document.getElementById('result');
+
+    lengthInput.addEventListener('input', () => {
+      lengthValue.textContent = `Länge: ${lengthInput.value}`;
+    });
+
+    generateButton.addEventListener('click', () => {
+      const length = parseInt(lengthInput.value, 10);
+      const numbers = '0123456789';
+      const letters = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ';
+      const symbols = '!@#$%^&*()_+.<>?';
+
+      let charset = '';
+      if (includeNumbers.checked) charset += numbers;
+      if (includeLetters.checked) charset += letters;
+      if (includeSymbols.checked) charset += symbols;
+
+      if (charset === '') {
+        result.textContent = 'Bitte wählen Sie mindestens eine Option aus!';
+        return;
+      }
+
+      let password = '';
+      let attempts = 0;
+      const maxAttempts = 100; // Verhindert Endlosschleife
+
+      let hasNumber, hasLetter, hasSymbol; // Variablen außerhalb der Schleife definieren
+
+      do {
+        password = '';
+        for (let i = 0; i < length; i++) {
+          const randomIndex = Math.floor(Math.random() * charset.length);
+          password += charset[randomIndex];
+        }
+
+        // Prüfen, ob das Passwort gültig ist
+        hasNumber = includeNumbers.checked ? password.split('').some(char => numbers.includes(char)) : true;
+        hasLetter = includeLetters.checked ? password.split('').some(char => letters.includes(char)) : true;
+        hasSymbol = includeSymbols.checked ? password.split('').some(char => symbols.includes(char)) : true;
+
+        attempts++;
+
+        if (attempts > maxAttempts) {
+          result.textContent = "Fehler: Passwort konnte nicht generiert werden!";
+          return;
+        }
+
+      } while (!(hasNumber && hasLetter && hasSymbol));
+
+      result.textContent = `Ihr Passwort: ${password} ${attempts}`;
+    });
+  </script>
+</body>
+</html>

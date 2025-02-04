@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Passwort Knacker</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-100 h-screen flex items-center justify-center">
+  <div class="text-center">
+    <h1 class="text-4xl font-bold mb-8">Passwort Knacker</h1>
+    <div class="flex space-x-6">
+      <div class="bg-white p-6 rounded-lg shadow-lg w-96">
+        <label for="inputPassword" class="block text-left mb-2 font-medium">Zu knackendes Passwort:</label>
+        <input type="text" id="inputPassword" class="w-full mb-4 p-2 border rounded-lg" placeholder="Passwort eingeben">       
+     
+        <label for="passwordLength" class="block text-left mb-2 font-medium">Passwortlänge:</label>
+        <input type="number" id="passwordLength" min="1" max="20" class="w-full mb-4 p-2 border rounded-lg" placeholder="Länge des Passworts">
+        
+        <div class="mb-4">
+          <label class="block text-left">
+            <input type="checkbox" id="includeNumbers" class="mr-2"> Zahlen
+          </label>
+          <label class="block text-left">
+            <input type="checkbox" id="includeLetters" class="mr-2" checked> Buchstaben
+          </label>
+          <label class="block text-left">
+            <input type="checkbox" id="includeSymbols" class="mr-2"> Sonderzeichen
+          </label>
+        </div>
+        <button id="crack" class="bg-red-500 text-white px-4 py-2 rounded-lg hover:bg-red-600">Passwort Knacken</button>
+        <p id="crackResult" class="mt-4 text-lg font-bold"></p>
+        <p id="estimatedTime" class="mt-2 text-sm text-gray-600"></p>
+      </div>
+      
+      <div class="bg-gray-200 p-6 rounded-lg shadow-lg w-64">
+        <h2 class="text-lg font-semibold mb-4">Getestete Passwörter</h2>
+        <ul id="attemptList" class="list-disc pl-4 text-sm"></ul>
+        <div class="mt-4">
+          <label class="block text-left mb-2 font-medium">Fortschritt:</label>
+          <div class="w-full bg-gray-300 h-4 rounded-lg">
+            <div id="progressBar" class="bg-green-500 h-4 rounded-lg" style="width: 0%;"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    let worker;
+    
+    document.getElementById('crack').addEventListener('click', () => {
+      const inputPassword = document.getElementById('inputPassword').value.trim();
+      let passwordLength = parseInt(document.getElementById('passwordLength').value, 10) || inputPassword.length;
+      const includeNumbers = document.getElementById('includeNumbers').checked;
+      const includeLetters = document.getElementById('includeLetters').checked;
+      const includeSymbols = document.getElementById('includeSymbols').checked;
+
+      if (!inputPassword || passwordLength < 1) {
+        document.getElementById('crackResult').textContent = 'Bitte gültige Werte eingeben!';
+        return;
+      }
+
+      if (worker) worker.terminate();
+      worker = new Worker('bruteforce-worker.js');
+
+      worker.postMessage({
+        inputPassword,
+        passwordLength,
+        includeNumbers,
+        includeLetters,
+        includeSymbols
+      });
+
+      worker.onmessage = (event) => {
+        const { type, data } = event.data;
+
+        if (type === 'progress') {
+          document.getElementById('progressBar').style.width = `${data.progress}%`;
+          document.getElementById('attemptList').innerHTML = `<li>${data.attempt}</li>`;
+        } else if (type === 'success') {
+          document.getElementById('crackResult').textContent = `Passwort geknackt nach ${data.attempts} Versuchen: ${data.password}`;
+          document.getElementById('progressBar').style.width = "100%";
+        }
+      };
+    });
+  </script>
+</body>
+</html>
