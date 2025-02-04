@@ -180,6 +180,7 @@
             <input type="text" id="colorInput" placeholder="HEX (z.B. #ff5733)">
             <button onclick="convertColor()">Umrechnen</button>
             <p id="colorResult"></p>
+        
         </div>
     </div>
 
@@ -263,7 +264,12 @@
             let g = parseInt(hex.substring(3, 5), 16);
             let b = parseInt(hex.substring(5, 7), 16);
             document.getElementById("colorResult").innerText = `RGB: (${r}, ${g}, ${b})`;
+
+            colorResult.style.backgroundColor = hex;
+            colorResult.style.display = "block"; // Zeige die Farbvorschau
+        
         }
+        
     </script>
 </body>
 </html>
