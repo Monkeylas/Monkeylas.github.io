@@ -1,91 +1,106 @@
 <!DOCTYPE html>
 <html lang="de">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sichere Verschlüsselung</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.1.1/crypto-js.min.js"></script>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Sichere Verschlüsselung</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.1.1/crypto-js.min.js"></script>
 </head>
 <body class="bg-gray-900 text-white min-h-screen flex flex-col items-center justify-center">
-    <header class="w-full bg-blue-600 text-center py-4 text-2xl font-semibold">
-        Sichere Textverschlüsselung
-    </header>
+  <header class="w-full bg-blue-600 text-center py-4 text-2xl font-semibold">
+    Sichere Textverschlüsselung
+  </header>
+  
+  <main class="bg-gray-800 p-6 rounded-lg shadow-lg mt-6 w-96 text-center">
+    <!-- Eingabefeld für den zu verschlüsselnden/deverschlüsselnden Text -->
+    <textarea id="inputText" placeholder="Gib hier deinen Text ein..." 
+              class="w-full p-2 border border-gray-600 rounded mb-4 bg-gray-700 text-white"></textarea>
     
-    <main class="bg-gray-800 p-6 rounded-lg shadow-lg mt-6 w-96 text-center">
-        <h2 class="text-xl font-semibold mb-4"></h2>
-        <textarea id="inputText" placeholder="Gib hier deinen Text ein..." 
-                  class="w-full p-2 border border-gray-600 rounded mb-4 bg-gray-700 text-white"></textarea>
-        
-        <select id="mode" class="w-full p-2 border border-gray-600 rounded mb-4 bg-gray-700 text-white">
-            <option value="encrypt">Verschlüsseln</option>
-            <option value="decrypt">Entschlüsseln</option>
-        </select>
-        
-        <button onclick="processText()" 
-                class="w-full p-2 bg-blue-500 text-white rounded hover:bg-blue-600">Start</button>
-        
-        <div class="w-full bg-gray-600 rounded h-4 mt-4">
-            <div id="progress" class="bg-green-500 h-4 rounded w-0"></div>
-        </div>
-        
-        <p id="outputText" class="text-green-400 mt-4 font-mono break-words"></p>
-    </main>
+    <!-- Eingabefeld für den Schlüssel -->
+    <input id="userKey" type="text" placeholder="Gib deinen Schlüssel ein..." 
+           class="w-full p-2 border border-gray-600 rounded mb-4 bg-gray-700 text-white">
     
-    <script>
-        function generateKey() {
-            return CryptoJS.lib.WordArray.random(32).toString(CryptoJS.enc.Hex);
+    <!-- Auswahl: Verschlüsseln oder Entschlüsseln -->
+    <select id="mode" class="w-full p-2 border border-gray-600 rounded mb-4 bg-gray-700 text-white">
+      <option value="encrypt">Verschlüsseln</option>
+      <option value="decrypt">Entschlüsseln</option>
+    </select>
+    
+    <button onclick="processText()" 
+            class="w-full p-2 bg-blue-500 text-white rounded hover:bg-blue-600">Start</button>
+    
+    <!-- Fortschrittsanzeige -->
+    <div class="w-full bg-gray-600 rounded h-4 mt-4">
+      <div id="progress" class="bg-green-500 h-4 rounded w-0"></div>
+    </div>
+    
+    <!-- Ausgabe der verschlüsselten/entschlüsselten Nachricht -->
+    <p id="outputText" class="text-green-400 mt-4 font-mono break-words"></p>
+  </main>
+  
+  <script>
+    // Verschlüsselung: Erzeugt ein zufälliges IV und verschlüsselt den Text
+    function encryptText(text, key) {
+      let iv = CryptoJS.lib.WordArray.random(16);
+      let encrypted = CryptoJS.AES.encrypt(text, key, {
+        iv: iv,
+        mode: CryptoJS.mode.CBC,
+        padding: CryptoJS.pad.Pkcs7
+      });
+      // Das IV wird als Hex-String vorangestellt, getrennt durch einen Doppelpunkt
+      return iv.toString(CryptoJS.enc.Hex) + ':' + encrypted.toString();
+    }
+
+    // Entschlüsselung: Trennt das IV vom Ciphertext und entschlüsselt den Rest
+    function decryptText(ciphertext, key) {
+      let parts = ciphertext.split(':');
+      if (parts.length !== 2) return "Ungültiges Format!";
+      let iv = CryptoJS.enc.Hex.parse(parts[0]);
+      let encryptedText = parts[1];
+      let decrypted = CryptoJS.AES.decrypt(encryptedText, key, {
+        iv: iv,
+        mode: CryptoJS.mode.CBC,
+        padding: CryptoJS.pad.Pkcs7
+      });
+      return decrypted.toString(CryptoJS.enc.Utf8);
+    }
+
+    function processText() {
+      let inputText = document.getElementById("inputText").value;
+      let userKey = document.getElementById("userKey").value;
+      let mode = document.getElementById("mode").value;
+      let outputText = document.getElementById("outputText");
+      let progress = document.getElementById("progress");
+      let step = 0;
+      
+      if (inputText.trim() === "") {
+        outputText.textContent = "Bitte einen Text eingeben!";
+        return;
+      }
+      if (userKey.trim() === "") {
+        outputText.textContent = "Bitte einen Schlüssel eingeben!";
+        return;
+      }
+      
+      // Ableitung eines 256-Bit Schlüssels aus dem eingegebenen Schlüssel mittels SHA-256
+      let key = CryptoJS.SHA256(userKey);
+      
+      progress.style.width = "0%";
+      let interval = setInterval(() => {
+        step += 10;
+        progress.style.width = step + "%";
+        
+        if (step >= 100) {
+          clearInterval(interval);
+          // Je nach Auswahl wird verschlüsselt oder entschlüsselt
+          let result = mode === "encrypt" 
+                        ? encryptText(inputText, key) 
+                        : decryptText(inputText, key);
+          outputText.textContent = result || "Fehler bei der Entschlüsselung!";
         }
-
-        const key = generateKey();
-        const iv = CryptoJS.lib.WordArray.random(16);
-
-        function encryptText(text) {
-            let encrypted = CryptoJS.AES.encrypt(text, CryptoJS.enc.Hex.parse(key), {
-                iv: iv,
-                mode: CryptoJS.mode.CBC,
-                padding: CryptoJS.pad.Pkcs7
-            });
-            return iv.toString(CryptoJS.enc.Hex) + ':' + encrypted.toString();
-        }
-
-        function decryptText(ciphertext) {
-            let parts = ciphertext.split(':');
-            let iv = CryptoJS.enc.Hex.parse(parts[0]);
-            let encryptedText = parts[1];
-
-            let decrypted = CryptoJS.AES.decrypt(encryptedText, CryptoJS.enc.Hex.parse(key), {
-                iv: iv,
-                mode: CryptoJS.mode.CBC,
-                padding: CryptoJS.pad.Pkcs7
-            });
-            return decrypted.toString(CryptoJS.enc.Utf8);
-        }
-
-        function processText() {
-            let inputText = document.getElementById("inputText").value;
-            let mode = document.getElementById("mode").value;
-            let outputText = document.getElementById("outputText");
-            let progress = document.getElementById("progress");
-            let step = 0;
-            
-            if (inputText.trim() === "") {
-                outputText.textContent = "Bitte einen Text eingeben!";
-                return;
-            }
-            
-            progress.style.width = "0%";
-            let interval = setInterval(() => {
-                step += 10;
-                progress.style.width = step + "%";
-                
-                if (step >= 100) {
-                    clearInterval(interval);
-                    let result = mode === "encrypt" ? encryptText(inputText) : decryptText(inputText);
-                    outputText.textContent = result || "Fehler bei der Entschlüsselung!";
-                }
-            }, 200);
-        }
-    </script>
+      }, 200);
+    }
+  </script>
 </body>
 </html>
