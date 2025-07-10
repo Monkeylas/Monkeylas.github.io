@@ -1,0 +1,279 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<title>Welcher Sport passt wissenschaftlich zu dir?</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<style>
+:root{
+  --primary:#0066cc;
+  --bg:linear-gradient(135deg,#c2e9fb 0%,#f1f9ff 100%);
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{
+  font-family:system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;
+  background:var(--bg);
+  min-height:100vh;
+  display:flex;
+  justify-content:center;
+  align-items:center;
+  padding:1.5rem;
+}
+.container{
+  background:#fff;
+  border-radius:12px;
+  box-shadow:0 8px 25px rgba(0,0,0,.15);
+  max-width:700px;
+  width:100%;
+  padding:2rem 2.5rem;
+}
+h1{text-align:center;margin-bottom:1rem;color:#003366;}
+.question{font-weight:600;margin:1.2rem 0 .6rem}
+.options{display:flex;flex-direction:column;gap:.7rem}
+button.option{
+  padding:.7rem 1rem;
+  border:2px solid var(--primary);
+  background:#eaf4ff;
+  border-radius:8px;
+  cursor:pointer;
+  transition:background .25s,color .25s;
+  font-size:1rem;
+}
+button.option:hover{background:var(--primary);color:#fff}
+.progress{height:8px;background:#e0e0e0;border-radius:4px;margin-top:1.2rem;overflow:hidden}
+.progress-bar{height:100%;width:0;background:var(--primary);transition:width .3s}
+#result{display:none;text-align:center}
+#sport-suggestion{font-size:1.2rem;font-weight:700;margin-top:.5rem}
+button.restart{
+  margin-top:1.3rem;
+  background:var(--primary);
+  color:#fff;
+  border:none;
+  padding:.6rem 1.2rem;
+  border-radius:8px;
+  cursor:pointer;
+  font-size:1rem;
+}
+@media(max-width:480px){
+  .container{padding:1.5rem 1rem}
+}
+</style>
+</head>
+<body>
+<div class="container">
+  <h1>Welche Sportart passt zu dir?</h1>
+  <div id="quiz">
+      <div class="question" id="question-text"></div>
+      <div class="options" id="options"></div>
+      <div class="progress"><div class="progress-bar" id="progress-bar"></div></div>
+  </div>
+  <div id="result">
+      <h2>Dein Ergebnis:</h2>
+      <p id="sport-suggestion"></p>
+      <button class="restart" onclick="restart()">Neu starten</button>
+  </div>
+</div>
+<script>
+const questions = [
+  {
+    text:"1. Hauptziel deines Trainings?",
+    options:["Gewichtsreduktion","Muskelaufbau","Ausdauer verbessern","Stress abbauen / Beweglichkeit","Soziale Interaktion"]
+  },
+  {
+    text:"2. Bevorzugte Trainingsumgebung?",
+    options:["Indoor","Outdoor","Egal"]
+  },
+  {
+    text:"3. Trainierst du lieber im Team oder allein?",
+    options:["Team","Einzel"]
+  },
+  {
+    text:"4. Möchtest du dich in Wettkämpfen messen?",
+    options:["Ja","Nein"]
+  },
+  {
+    text:"5. Brauchst du gelenkschonende Aktivitäten?",
+    options:["Ja","Nicht unbedingt"]
+  },
+  {
+    text:"6. Wie viel Equipment darf der Sport erfordern?",
+    options:["So wenig wie möglich","Ein paar Geräte sind ok","Teure/umfangreiche Ausrüstung ist kein Problem"]
+  },
+  {
+    text:"7. Wie komplex darf die Technik sein?",
+    options:["Einfach","Mittel","Komplex – ich mag Herausforderungen"]
+  },
+  {
+    text:"8. Dein aktuelles Fitness‑Niveau?",
+    options:["Einsteiger","Fortgeschritten","Profi"]
+  },
+  {
+    text:"9. Zeitbudget pro Woche?",
+    options:["< 3 h","3–5 h","> 5 h"]
+  },
+  {
+    text:"10. Lieblingsumgebung/Element?",
+    options:["Wasser","Land (egal)","Höhe/Berg & Klettern"]
+  }
+];
+
+const sports = [
+  "Fußball","Basketball","Volleyball",
+  "Tennis","Badminton","Laufen",
+  "Radfahren","Schwimmen","Yoga / Pilates",
+  "Krafttraining","Klettern"
+];
+
+let current = 0;
+const answers = [];
+const qText = document.getElementById('question-text');
+const optsDiv = document.getElementById('options');
+const progressBar = document.getElementById('progress-bar');
+
+function loadQuestion(){
+  const q = questions[current];
+  qText.textContent = q.text;
+  optsDiv.innerHTML='';
+  q.options.forEach((opt,i)=>{
+    const btn=document.createElement('button');
+    btn.className='option';
+    btn.textContent=opt;
+    btn.onclick=()=>selectOption(i);
+    optsDiv.appendChild(btn);
+  });
+  progressBar.style.width = (current/questions.length)*100 + '%';
+}
+
+function selectOption(choice){
+  answers[current]=choice;
+  current++;
+  if(current<questions.length){
+    loadQuestion();
+  }else{
+    showResult();
+  }
+}
+
+function restart(){
+  current=0;
+  answers.length=0;
+  document.getElementById('result').style.display='none';
+  document.getElementById('quiz').style.display='block';
+  loadQuestion();
+}
+
+function showResult(){
+  document.getElementById('quiz').style.display='none';
+  document.getElementById('result').style.display='block';
+  document.getElementById('sport-suggestion').textContent = determineSport();
+  progressBar.style.width='100%';
+}
+
+function determineSport(){
+  // Einfaches Scoring‑System
+  const score = Array(sports.length).fill(0);
+
+  // 1 Hauptziel
+  switch(answers[0]){
+    case 0: // Gewichtsreduktion
+      inc(["Laufen","Radfahren","Schwimmen"]); break;
+    case 1: // Muskelaufbau
+      inc(["Krafttraining","Klettern"]); break;
+    case 2: // Ausdauer
+      inc(["Laufen","Radfahren","Schwimmen","Fußball"]); break;
+    case 3: // Stress / Beweglichkeit
+      inc(["Yoga / Pilates","Schwimmen","Klettern"]); break;
+    case 4: // Sozial
+      inc(["Fußball","Basketball","Volleyball","Tennis","Badminton"]); break;
+  }
+
+  // 2 Indoor/Outdoor
+  if(answers[1]==0){ // Indoor
+    inc(["Basketball","Volleyball","Badminton","Krafttraining","Yoga / Pilates"]);
+  }else if(answers[1]==1){ // Outdoor
+    inc(["Fußball","Laufen","Radfahren","Tennis","Klettern"]);
+  }else{ // Egal
+    inc(["Schwimmen"]); // Schwimmen kann beides (Hallenbad/Freiwasser)
+  }
+
+  // 3 Team vs Einzel
+  if(answers[2]==0){ // Team
+    inc(["Fußball","Basketball","Volleyball"]);
+  }else{
+    inc(["Laufen","Radfahren","Schwimmen","Yoga / Pilates","Krafttraining","Tennis","Badminton","Klettern"]);
+  }
+
+  // 4 Wettkampf
+  if(answers[3]==0){
+    inc(["Fußball","Basketball","Volleyball","Tennis","Badminton"]);
+  }else{
+    inc(["Yoga / Pilates","Radfahren","Klettern","Schwimmen"]);
+  }
+
+  // 5 Gelenkschonend
+  if(answers[4]==0){
+    inc(["Schwimmen","Yoga / Pilates","Radfahren"]);
+  }else{
+    inc(["Fußball","Basketball","Laufen","Klettern"]);
+  }
+
+  // 6 Equipment
+  if(answers[5]==0){
+    inc(["Laufen","Yoga / Pilates"]);
+  }else if(answers[5]==1){
+    inc(["Badminton","Tennis","Krafttraining"]);
+  }else{
+    inc(["Radfahren","Klettern","Schwimmen"]);
+  }
+
+  // 7 Technik‑Komplexität
+  if(answers[6]==0){
+    inc(["Laufen","Krafttraining","Yoga / Pilates"]);
+  }else if(answers[6]==1){
+    inc(["Radfahren","Schwimmen","Badminton"]);
+  }else{
+    inc(["Tennis","Klettern","Fußball","Basketball","Volleyball"]);
+  }
+
+  // 8 Fitness‑Level
+  if(answers[7]==0){
+    inc(["Yoga / Pilates","Schwimmen","Radfahren"]);
+  }else if(answers[7]==1){
+    inc(["Laufen","Badminton","Krafttraining"]);
+  }else{
+    inc(["Klettern","Fußball","Basketball","Tennis"]);
+  }
+
+  // 9 Zeitbudget (we don't down‑rank but boost matching sports)
+  if(answers[8]==0){
+    inc(["Krafttraining","Badminton","Yoga / Pilates"]);
+  }else if(answers[8]==2){
+    inc(["Radfahren","Klettern","Fußball","Laufen"]);
+  }
+
+  // 10 Umgebung/Element
+  if(answers[9]==0){
+    inc(["Schwimmen"]);
+  }else if(answers[9]==2){
+    inc(["Klettern"]);
+  }
+
+  // find sport with max score
+  let max=0; let bestIndex=0;
+  for(let i=0;i<score.length;i++){
+    if(score[i]>max){max=score[i];bestIndex=i;}
+  }
+  return sports[bestIndex];
+
+  function inc(names){
+    names.forEach(n=>{
+      const idx = sports.indexOf(n);
+      if(idx>-1) score[idx]+=1;
+    });
+  }
+}
+
+loadQuestion();
+</script>
+</body>
+</html>
