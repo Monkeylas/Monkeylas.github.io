@@ -1,0 +1,275 @@
+
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<title>SportMatcher – Glass Edition</title>
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<style>
+:root{
+  --primary:#2196f3;
+  --bg1:#dfe9f3;
+  --bg2:#ffffff;
+}
+*{box-sizing:border-box;margin:0;padding:0;font-family:system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;}
+body{
+  min-height:100vh;
+  display:flex;
+  justify-content:center;
+  align-items:center;
+  background:linear-gradient(135deg,var(--bg1) 0%,var(--bg2) 100%);
+  padding:1.5rem;
+}
+.glass{
+  background:rgba(255,255,255,0.18);
+  border-radius:16px;
+  border:1px solid rgba(255,255,255,0.4);
+  box-shadow:0 8px 32px 0 rgba(31,38,135,0.37);
+  backdrop-filter:blur(10px);
+  -webkit-backdrop-filter:blur(10px);
+  width:100%;
+  max-width:800px;
+  padding:2.5rem 3rem;
+}
+h1{text-align:center;margin-bottom:1.2rem;color:#003366;}
+.question{font-weight:600;margin:1.4rem 0 .6rem;color:#003366;}
+.options{display:flex;flex-direction:column;gap:.6rem}
+button.option{
+  padding:.7rem 1rem;
+  background:rgba(255,255,255,0.35);
+  border:2px solid var(--primary);
+  border-radius:10px;
+  color:#003366;
+  cursor:pointer;
+  transition:.25s;
+}
+button.option:hover{
+  background:var(--primary);
+  color:#fff;
+}
+.progress{height:10px;background:rgba(255,255,255,0.4);border-radius:5px;overflow:hidden;margin-top:1.4rem}
+.progress-bar{height:100%;width:0;background:var(--primary);transition:width .3s}
+#result{display:none;text-align:center;color:#003366;}
+#sport-suggestion{font-weight:700;font-size:1.2rem;margin-top:.6rem}
+button.restart{
+  margin-top:1.3rem;
+  background:var(--primary);
+  color:#fff;
+  border:none;
+  padding:.7rem 1.3rem;
+  border-radius:10px;
+  cursor:pointer;
+  font-size:1rem;
+}
+@media(max-width:500px){
+ .glass{padding:1.5rem 1rem}
+}
+</style>
+</head>
+<body>
+<div class="glass">
+  <h1>Welcher Sport passt zu dir?</h1>
+  <div id="quiz">
+    <div class="question" id="question-text"></div>
+    <div class="options" id="options"></div>
+    <div class="progress"><div class="progress-bar" id="progress-bar"></div></div>
+  </div>
+  <div id="result">
+    <h2>Top‑Empfehlungen:</h2>
+    <ol id="sport-suggestion"></ol>
+    <button class="restart" onclick="restart()">Neu starten</button>
+  </div>
+</div>
+<script>
+/***************** DATA ************************/
+const sports = ["Fußball","Basketball","Volleyball","Tennis","Badminton","Laufen","Radfahren","Schwimmen","Yoga / Pilates","Krafttraining","Klettern","Rudern","Boxen / Kampfsport","Triathlon","E‑Sports","Skilanglauf","Surfen","Golf","CrossFit","Tischtennis"];
+
+const questions = [
+  {id:"goal", text:"Hauptziel deines Trainings?", options:["Gewichtsreduktion","Muskelaufbau","Ausdauer","Stressabbau / Flexibilität","Soziale Kontakte"]},
+  {id:"team", text:"Trainierst du lieber im Team oder allein?", options:["Team","Einzel"]},
+  {id:"competition", text:"Wettkampf wichtig?", options:["Ja","Nein"]},
+  {id:"environment", text:"Bevorzugte Trainingsumgebung?", options:["Indoor","Outdoor","Egal"]},
+  {id:"equipment", text:"Wie viel Equipment ist okay?", options:["Kaum","Etwas","Viele/teure Geräte"]},
+  {id:"joints", text:"Gelenkschonend?", options:["Ja","Nicht wichtig"]},
+  {id:"fitness", text:"Aktuelles Fitness‑Niveau?", options:["Einsteiger","Fortgeschritten","Profi"]},
+  {id:"time", text:"Zeitbudget pro Woche?", options:["< 3 h","3–5 h","> 5 h"]},
+  {id:"water_pref", text:"Fühlst du dich im Wasser wohl?", options:["Ja","Geht so","Nein"]},
+  {id:"height_pref", text:"Reizt dich Höhe/Klettern?", options:["Ja","Neutral","Nein"]},
+  // Conditional
+  {id:"ball_interest", text:"Magst du Ballsportarten?", options:["Ja","Nein"], dependsOn:{question:"team", answers:[0]}},
+  {id:"contact", text:"Okay mit Körperkontakt?", options:["Ja","Lieber nicht"], dependsOn:{question:"team", answers:[0]}},
+  {id:"technique", text:"Technik lernen macht dir Spaß?", options:["Ja","Neutral","Nein"]},
+  {id:"outdoor_pref", text:"Klima draußen, das du bevorzugst?", options:["Warm","Kühl","Beides"] , dependsOn:{question:"environment", answers:[1]}},
+  {id:"mindbody", text:"Interessieren dich Mind‑Body‑Konzepte?", options:["Ja","Nein"]},
+  {id:"risk", text:"Wie hoch darf das Verletzungsrisiko sein?", options:["Sehr gering","Mittel","Höher ok"]},
+  {id:"endurance_type", text:"Welche Ausdauerform liegt dir?", options:["Lang & gleichmäßig","Intervall","Kurz & intensiv"]},
+  {id:"strength_type", text:"Welche Kraft-Komponente reizt dich?", options:["Maximalkraft","Muskel-Endurance","Kaum relevant"]},
+  {id:"coordination", text:"Koordination & Technik wichtig?", options:["Sehr","Mittel","Unwichtig"]},
+  {id:"virtual", text:"Würdest du auch virtuell trainieren?", options:["Ja","Vielleicht","Nein"]}
+];
+
+/***************** STATE ************************/
+let answers = {};
+const qText = document.getElementById("question-text");
+const optsDiv = document.getElementById("options");
+const progressBar = document.getElementById("progress-bar");
+
+/***************** FLOW FUNCTIONS ************************/
+function eligible(q){
+  if(!q.dependsOn) return true;
+  const dep = answers[q.dependsOn.question];
+  return dep!==undefined && q.dependsOn.answers.includes(dep);
+}
+function remaining(){
+  return questions.filter(q=>answers[q.id]===undefined && eligible(q));
+}
+function loadNext(){
+  const left = remaining();
+  if(!left.length){ showResult(); return; }
+  const q = left[0];
+  qText.textContent = q.text;
+  optsDiv.innerHTML="";
+  q.options.forEach((opt,i)=>{
+    const btn=document.createElement("button");
+    btn.className="option";
+    btn.textContent=opt;
+    btn.onclick=()=>{answers[q.id]=i; updateProgress(); loadNext();};
+    optsDiv.appendChild(btn);
+  });
+}
+function updateProgress(){
+  progressBar.style.width = (Object.keys(answers).length / questions.length) * 100 + "%";
+}
+function restart(){
+  answers={};
+  document.getElementById("result").style.display="none";
+  document.getElementById("quiz").style.display="block";
+  progressBar.style.width="0%";
+  loadNext();
+}
+
+/***************** SCORING ************************/
+function inc(arr,names,pts=1){names.forEach(n=>{const idx=sports.indexOf(n); if(idx>-1) arr[idx]+=pts;});}
+function determineScores(){
+  const s = Array(sports.length).fill(0);
+
+  // Goal
+  switch(answers.goal){
+    case 0: inc(s,["Laufen","Radfahren","Schwimmen","CrossFit"]); break;
+    case 1: inc(s,["Krafttraining","CrossFit","Boxen / Kampfsport"]); break;
+    case 2: inc(s,["Laufen","Radfahren","Schwimmen","Triathlon","Skilanglauf"]); break;
+    case 3: inc(s,["Yoga / Pilates","Schwimmen","Golf"]); break;
+    case 4: inc(s,["Fußball","Basketball","Volleyball","Tennis","Badminton"]); break;
+  }
+
+  // Team vs Einzel
+  if(answers.team===0){
+    inc(s,["Fußball","Basketball","Volleyball","Tennis","Badminton","Tischtennis"]);
+  }else{
+    inc(s,["Laufen","Radfahren","Schwimmen","Yoga / Pilates","Krafttraining","Klettern","Rudern","Boxen / Kampfsport","Triathlon","E‑Sports","Skilanglauf","Surfen","Golf","CrossFit"]);
+  }
+
+  // Competition
+  if(answers.competition===0){
+    inc(s,["Fußball","Basketball","Tennis","Badminton","Triathlon","Boxen / Kampfsport","Laufen","Radfahren","CrossFit"],2);
+  }else{
+    inc(s,["Yoga / Pilates","Golf","E‑Sports"]);
+  }
+
+  // Environment
+  if(answers.environment===0){
+    inc(s,["Basketball","Volleyball","Badminton","Krafttraining","Yoga / Pilates","Boxen / Kampfsport","E‑Sports","Schwimmen"]);
+  }else if(answers.environment===1){
+    inc(s,["Fußball","Laufen","Radfahren","Tennis","Klettern","Rudern","Surfen","Skilanglauf","Golf","CrossFit"]);
+  }
+
+  // Water
+  if(answers.water_pref===0){
+    inc(s,["Schwimmen","Triathlon","Surfen"]);
+  }else if(answers.water_pref===2){
+    // dislike water; downvote swimming
+    inc(s,["Schwimmen"],-3);
+  }
+
+  // Height
+  if(answers.height_pref===0){ inc(s,["Klettern","Skilanglauf"],2); }
+  else if(answers.height_pref===2){ inc(s,["Klettern"],-3); }
+
+  // Ball interest (if answered)
+  if(answers.ball_interest!==undefined){
+    if(answers.ball_interest===0) inc(s,["Fußball","Basketball","Volleyball","Tennis","Badminton","Tischtennis"]);
+    else inc(s,["Laufen","Radfahren","Krafttraining","Yoga / Pilates"]);
+  }
+
+  // Contact
+  if(answers.contact!==undefined){
+    if(answers.contact===0) inc(s,["Fußball","Basketball","Boxen / Kampfsport","CrossFit"]);
+    else inc(s,["Badminton","Yoga / Pilates","Golf"]);
+  }
+
+  // Joints
+  if(answers.joints===0){
+    inc(s,["Schwimmen","Yoga / Pilates","Radfahren","Golf","Rudern"]);
+    inc(s,["CrossFit","Boxen / Kampfsport","Basketball","Klettern"],-2);
+  }
+
+  // Technique interest
+  if(answers.technique!==undefined){
+    if(answers.technique===0) inc(s,["Tennis","Badminton","Klettern","Surfen","Golf","Basketball"]);
+    else if(answers.technique===2) inc(s,["Laufen","Krafttraining","Yoga / Pilates"]);
+  }
+
+  // Mind-body
+  if(answers.mindbody===0) inc(s,["Yoga / Pilates"]);
+
+  // Risk
+  if(answers.risk===0){
+    inc(s,["Yoga / Pilates","Golf","Schwimmen"],2);
+    inc(s,["Boxen / Kampfsport","Klettern","CrossFit","Basketball"],-3);
+  }else if(answers.risk===2){
+    inc(s,["Boxen / Kampfsport","Klettern","CrossFit","Basketball"],2);
+  }
+
+  // Endurance type
+  if(answers.endurance_type===0) inc(s,["Laufen","Radfahren","Skilanglauf","Schwimmen","Triathlon"],2);
+  else if(answers.endurance_type===1) inc(s,["CrossFit","Basketball","Fußball"]);
+  else inc(s,["Boxen / Kampfsport","CrossFit"]);
+
+  // Strength type
+  if(answers.strength_type===0) inc(s,["Krafttraining","CrossFit","Boxen / Kampfsport","Klettern"],2);
+  else if(answers.strength_type===2) inc(s,["Yoga / Pilates","Golf","E‑Sports"]);
+
+  // Coordination
+  if(answers.coordination===0) inc(s,["Badminton","Tennis","Basketball","Klettern","Surfen","Golf"],2);
+  else if(answers.coordination===2) inc(s,["Laufen","Radfahren","Krafttraining"]);
+
+  // Virtual
+  if(answers.virtual===0) inc(s,["E‑Sports"]);
+  else if(answers.virtual===2) inc(s,["E‑Sports"],-3);
+
+  return s;
+}
+
+function showResult(){
+  document.getElementById("quiz").style.display="none";
+  const list = document.getElementById("sport-suggestion");
+  list.innerHTML="";
+  const scores = determineScores();
+  // top 3
+  const top = scores.map((v,i)=>({sport:sports[i],score:v}))
+                    .sort((a,b)=>b.score-a.score)
+                    .slice(0,3);
+  top.forEach(item=>{
+    const li=document.createElement("li");
+    li.textContent=`${item.sport} – Score: ${item.score}`;
+    list.appendChild(li);
+  });
+  document.getElementById("result").style.display="block";
+  progressBar.style.width="100%";
+}
+
+/***************** INIT ************************/
+loadNext();
+</script>
+</body>
+</html>
