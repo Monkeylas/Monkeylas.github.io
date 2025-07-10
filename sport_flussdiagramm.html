@@ -1,0 +1,146 @@
+
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Welcher Sport passt zu dir?</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: linear-gradient(to right, #e0f7fa, #ffffff);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 40px 20px;
+    }
+
+    .container {
+      max-width: 600px;
+      background: white;
+      padding: 30px;
+      border-radius: 12px;
+      box-shadow: 0 0 15px rgba(0,0,0,0.1);
+      text-align: center;
+    }
+
+    h1 {
+      color: #00796b;
+    }
+
+    .question {
+      font-size: 20px;
+      margin-bottom: 20px;
+    }
+
+    .btn {
+      background-color: #00796b;
+      color: white;
+      border: none;
+      padding: 12px 20px;
+      margin: 10px;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 16px;
+    }
+
+    .btn:hover {
+      background-color: #004d40;
+    }
+
+    #result {
+      font-size: 22px;
+      font-weight: bold;
+      margin-top: 30px;
+      color: #004d40;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>Welcher Sport passt zu dir?</h1>
+    <div id="flow">
+      <div class="question" id="questionText">Willst du lieber in der Gruppe oder allein Sport machen?</div>
+      <button class="btn" onclick="next('team')">In der Gruppe</button>
+      <button class="btn" onclick="next('solo')">Allein</button>
+    </div>
+    <div id="result" style="display:none;"></div>
+    <button class="btn" style="display:none;" id="restart" onclick="restart()">Neustart</button>
+  </div>
+
+  <script>
+    const questions = [
+      {
+        text: "Willst du lieber in der Gruppe oder allein Sport machen?",
+        options: { team: "In der Gruppe", solo: "Allein" }
+      },
+      {
+        text: "Willst du abnehmen, Muskeln stärken, dich entspannen oder Wettkampf erleben?",
+        options: { team: "Wettkampf & Spaß", solo: "Fitness & Entspannung" }
+      },
+      {
+        text: "Was hat dir früher Spaß gemacht?",
+        options: { team: "Teamsport", solo: "Individualsport" }
+      },
+      {
+        text: "Kannst du regelmäßig zu festen Zeiten?",
+        options: { team: "Ja", solo: "Nein, ich brauche Flexibilität" }
+      },
+      {
+        text: "Gibt es gesundheitliche Einschränkungen?",
+        options: { solo: "Ja", team: "Nein" }
+      },
+      {
+        text: "Was macht dir beim Sport am meisten Spaß?",
+        options: { team: "Gemeinschaft & Spiel", solo: "Zeit für mich selbst" }
+      },
+      {
+        text: "Welche Bewegungstypen bevorzugst du?",
+        options: { team: "Spielen, laufen, Ball", solo: "ruhig, fokussiert" }
+      }
+    ];
+
+    let currentQuestion = 0;
+    let teamPoints = 0;
+    let soloPoints = 0;
+
+    function next(choice) {
+      if (choice === "team") teamPoints++;
+      if (choice === "solo") soloPoints++;
+
+      currentQuestion++;
+      if (currentQuestion < questions.length) {
+        document.getElementById("questionText").innerText = questions[currentQuestion].text;
+        const buttons = document.querySelectorAll(".btn");
+        buttons[0].innerText = questions[currentQuestion].options.team;
+        buttons[1].innerText = questions[currentQuestion].options.solo;
+      } else {
+        showResult();
+      }
+    }
+
+    function showResult() {
+      document.getElementById("flow").style.display = "none";
+      document.getElementById("restart").style.display = "inline-block";
+      let resultText = teamPoints > soloPoints
+        ? "Du bist der Typ für Teamsport! ⚽🏐"
+        : "Du bist der Typ für Individualsport! 🧘🚴";
+      document.getElementById("result").innerText = resultText;
+      document.getElementById("result").style.display = "block";
+    }
+
+    function restart() {
+      currentQuestion = 0;
+      teamPoints = 0;
+      soloPoints = 0;
+      document.getElementById("flow").style.display = "block";
+      document.getElementById("restart").style.display = "none";
+      document.getElementById("result").style.display = "none";
+      document.getElementById("questionText").innerText = questions[0].text;
+      const buttons = document.querySelectorAll(".btn");
+      buttons[0].innerText = questions[0].options.team;
+      buttons[1].innerText = questions[0].options.solo;
+    }
+  </script>
+</body>
+</html>
