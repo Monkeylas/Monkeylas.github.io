@@ -1,0 +1,168 @@
+
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Welcher Sport passt zu dir?</title>
+  <style>
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background: linear-gradient(to right, #e3f2fd, #fce4ec);
+      margin: 0;
+      padding: 0;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+    }
+
+    .container {
+      background: white;
+      padding: 40px;
+      border-radius: 16px;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+      max-width: 700px;
+      width: 100%;
+      text-align: center;
+      animation: fadeIn 0.6s ease-in-out;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(20px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    h1 {
+      color: #0d47a1;
+      margin-bottom: 30px;
+    }
+
+    .question {
+      font-size: 22px;
+      color: #333;
+      margin-bottom: 30px;
+    }
+
+    .btn {
+      background-color: #1976d2;
+      color: white;
+      border: none;
+      padding: 14px 28px;
+      margin: 12px;
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 16px;
+      transition: background-color 0.3s ease;
+    }
+
+    .btn:hover {
+      background-color: #0d47a1;
+    }
+
+    #result {
+      font-size: 24px;
+      font-weight: bold;
+      margin-top: 40px;
+      color: #2e7d32;
+      animation: fadeIn 0.5s ease-in-out;
+    }
+
+    #restart {
+      margin-top: 20px;
+      background-color: #e91e63;
+    }
+
+    #restart:hover {
+      background-color: #ad1457;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>Finde deine perfekte Sportart 🏃‍♀️⚽</h1>
+    <div id="flow">
+      <div class="question" id="questionText">Willst du lieber in der Gruppe oder allein Sport machen?</div>
+      <button class="btn" onclick="next('team')">In der Gruppe</button>
+      <button class="btn" onclick="next('solo')">Allein</button>
+    </div>
+    <div id="result" style="display:none;"></div>
+    <button class="btn" style="display:none;" id="restart" onclick="restart()">🔁 Neustart</button>
+  </div>
+
+  <script>
+    const questions = [
+      {
+        text: "Willst du lieber in der Gruppe oder allein Sport machen?",
+        options: { team: "In der Gruppe", solo: "Allein" }
+      },
+      {
+        text: "Was motiviert dich beim Sport?",
+        options: { team: "Spaß mit Freunden & Wettkampf", solo: "Fitness & Entspannung" }
+      },
+      {
+        text: "Wie wichtig ist Kommunikation beim Sport für dich?",
+        options: { team: "Sehr wichtig", solo: "Nicht so wichtig" }
+      },
+      {
+        text: "Wie ist deine Zeiteinteilung?",
+        options: { team: "Ich kann zu festen Trainingszeiten", solo: "Ich brauche Flexibilität" }
+      },
+      {
+        text: "Welche Art Ziel findest du besser?",
+        options: { team: "Teamerfolg", solo: "Persönliche Ziele" }
+      },
+      {
+        text: "Welche Beschreibung passt besser zu dir?",
+        options: { team: "Teamfähig & kontaktfreudig", solo: "Eigenständig & zielorientiert" }
+      }
+    ];
+
+    let currentQuestion = 0;
+    let teamPoints = 0;
+    let soloPoints = 0;
+
+    function next(choice) {
+      if (choice === "team") teamPoints++;
+      if (choice === "solo") soloPoints++;
+
+      currentQuestion++;
+      if (currentQuestion < questions.length) {
+        document.getElementById("questionText").innerText = questions[currentQuestion].text;
+        const buttons = document.querySelectorAll(".btn");
+        buttons[0].innerText = questions[currentQuestion].options.team;
+        buttons[1].innerText = questions[currentQuestion].options.solo;
+      } else {
+        showResult();
+      }
+    }
+
+    function showResult() {
+      document.getElementById("flow").style.display = "none";
+      document.getElementById("restart").style.display = "inline-block";
+      let resultText = teamPoints > soloPoints
+        ? "✨ Du bist wie gemacht für **Teamsportarten** wie Fußball, Volleyball oder Basketball! ⚽🏐🏀"
+        : "🌿 Du passt perfekt zu **Individualsportarten** wie Joggen, Yoga oder Radfahren! 🧘🚴🏃";
+      document.getElementById("result").innerHTML = resultText;
+      document.getElementById("result").style.display = "block";
+    }
+
+    function restart() {
+      currentQuestion = 0;
+      teamPoints = 0;
+      soloPoints = 0;
+      document.getElementById("flow").style.display = "block";
+      document.getElementById("restart").style.display = "none";
+      document.getElementById("result").style.display = "none";
+      document.getElementById("questionText").innerText = questions[0].text;
+      const buttons = document.querySelectorAll(".btn");
+      buttons[0].innerText = questions[0].options.team;
+      buttons[1].innerText = questions[0].options.solo;
+    }
+  </script>
+</body>
+</html>
